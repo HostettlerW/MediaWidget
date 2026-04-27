@@ -7,6 +7,7 @@ import com.sun.jna.platform.win32.WinDef.DWORD;
 import com.sun.jna.platform.win32.WinUser;
 import com.sun.jna.platform.win32.WinUser.INPUT;
 import com.sun.jna.platform.win32.WinUser.KEYBDINPUT;
+import mediawidget.util.AppLog;
 
 public class Win32MSC implements MediaSystemCaller{
 
@@ -45,13 +46,16 @@ public class Win32MSC implements MediaSystemCaller{
     }
 
     private void sendVirtualKey(int virtualKey) {
+        AppLog.info("Sending virtual key: 0x" + Integer.toHexString(virtualKey));
         INPUT[] events = (INPUT[]) new INPUT().toArray(2);
         fillKeyboardInput(events[0], virtualKey, KEYEVENTF_EXTENDEDKEY);
         fillKeyboardInput(events[1], virtualKey, KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP);
 
         DWORD sent = User32.INSTANCE.SendInput(new DWORD(events.length), events, events[0].size());
+        AppLog.info("SendInput returned: " + sent.intValue());
         if (sent.intValue() != events.length) {
             int errorCode = Native.getLastError();
+            AppLog.error("SendInput failed with Win32 error code: " + errorCode, null);
             throw new IllegalStateException("SendInput failed with Win32 error code: " + errorCode);
         }
     }

@@ -6,3 +6,6 @@ build
 
 # VS code settings should be ignored
 .vscode
+
+# Dist directory should be ignored as it contains the compiled application.
+dist

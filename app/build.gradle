@@ -9,6 +9,7 @@ plugins {
     // Apply the application plugin to add support for building a CLI application in Java.
     id 'application'
     id 'org.openjfx.javafxplugin' version '0.1.0'
+    id 'com.gradleup.shadow' version '9.4.1'
 }
 
 javafx {
@@ -45,6 +46,51 @@ java {
 application {
     // Define the main class for the application.
     mainClass = 'mediawidget.App'
+}
+
+// Copilot generated task for Windows Packaging.
+tasks.register('packageAppImage', Exec) {
+    group = 'distribution'
+    description = 'Builds a Windows app-image with all runtime dependencies included.'
+    dependsOn tasks.named('installDist')
+
+    doFirst {
+        def installLibDir = layout.buildDirectory.dir('install/app/lib').get().asFile
+        def outputDir = rootProject.file('dist/MediaWidget')
+
+        def javafxModulePath = configurations.runtimeClasspath.files
+            .findAll { it.name ==~ /javafx-(base|graphics|controls|fxml)-.*-win\.jar/ }
+            .collect { it.absolutePath }
+            .join(File.pathSeparator)
+
+        if (!javafxModulePath) {
+            throw new GradleException('Unable to locate JavaFX Windows runtime jars in runtimeClasspath.')
+        }
+
+        if (outputDir.exists()) {
+            delete(outputDir)
+        }
+
+        def jpackageExe = new File(
+            javaToolchains.launcherFor {
+                languageVersion = JavaLanguageVersion.of(21)
+            }.get().metadata.installationPath.asFile,
+            'bin/jpackage.exe'
+        )
+
+        commandLine(
+            jpackageExe.absolutePath,
+            '--type', 'app-image',
+            '--input', installLibDir.absolutePath,
+            '--dest', rootProject.file('dist').absolutePath,
+            '--name', 'MediaWidget',
+            '--main-jar', 'app.jar',
+            '--main-class', application.mainClass.get(),
+            '--module-path', javafxModulePath,
+            '--add-modules', 'javafx.controls,javafx.fxml,java.logging,jdk.unsupported',
+            '--app-version', '1.1.0'
+        )
+    }
 }
 
 tasks.named('test') {
