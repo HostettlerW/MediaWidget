@@ -16,6 +16,8 @@ import mediawidget.viewmodel.ImplMVM;
 import mediawidget.viewmodel.MediaViewModel;
 
 public class App extends Application {
+
+    private final String version = "1.0.0";
     
     @Override
     public void start(Stage stage) throws Exception {
